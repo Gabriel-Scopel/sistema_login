@@ -1,4 +1,5 @@
 <?php
+session_start();
 $modo = 'local'; 
 
 if($modo =='local'){
@@ -28,4 +29,16 @@ function limpaPost($dados){
     $dados = stripslashes($dados);
     $dados = htmlspecialchars($dados);
     return $dados;
+}
+
+function auth($tokenSessao){
+    global $pdo;
+    $sql = $pdo->prepare("SELECT * FROM usuarios WHERE token=? LIMIT 1");
+    $sql->execute(array($tokenSessao));
+    $usuario = $sql->fetch(PDO::FETCH_ASSOC);
+    if(!$usuario){
+       return false;
+    }else{
+      return $usuario;
+    }
 }
