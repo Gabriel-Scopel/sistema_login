@@ -38,11 +38,33 @@ if(isset($_POST['nome_completo']) && isset($_POST['email']) && isset($_POST['sen
             if(!$usuario){
                 $recupera_senha="";
                 $token="";
+                $codigo_confirmacao = uniqid();
                 $status="novo";
                 $data_cadastro= date('d/m/Y');
-                $sql = $pdo->prepare("INSERT INTO usuarios VALUES (null,?,?,?,?,?,?,?)");
-                if($sql->execute(array($nome, $email, $senha_cript, $recupera_senha, $token,$status,$data_cadastro))){
-                    header('location: index.php?result=ok');
+                $sql = $pdo->prepare("INSERT INTO usuarios VALUES (null,?,?,?,?,?,?,?,?)");
+                if($sql->execute(array($nome, $email, $senha_cript, $recupera_senha, $token,$codigo_confirmacao,$status,$data_cadastro))){
+                    if($modo == "local"){
+                        header('location: index.php?result=ok');
+                    }
+
+                    if($modo == "producao"){
+                        $mail = new PHPMailer(true);
+                        try{
+                            $mail->setFrom('sistema@emailsistema.com', 'Sistema de login'); //email do sistema
+                            $mail->addAddress($email, $nome); //email do usuário
+
+                            //Content
+                            $mail->isHTML(true);  //corpo do email construido com html
+                            $mail->Subject = 'Confirme seu Cadastro'; //título do email
+                            $mail->Body    = '<h1>Confirme seu email abaixo: </h1><br><br><a href="https://seusistema.com.br/confirmacao.php?cod_confirm='.$codigo_confirmacao.'">Confirmar E-mail</a> ';
+                            $mail->send();
+                            header('location: obrigado.php');
+                        } catch (Exception $e) {
+                            echo "Houve um erro ao enviar o e-mail de confirmação: {$mail->ErrorInfo}";
+                        }
+                    }
+                    
+                    
                 }
             }else{
                 $erro_geral = "Usuário já cadastrado.";

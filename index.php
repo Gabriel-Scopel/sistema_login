@@ -4,19 +4,24 @@ if(isset($_POST['email']) && isset($_POST['senha']) && !empty($_POST['email']) &
     $email = limpaPost($_POST['email']);
     $senha = limpaPost($_POST['senha']);
     $senha_cript = sha1($senha);
+    
 
     $sql = $pdo->prepare("SELECT * FROM usuarios WHERE email=? AND senha=? LIMIT 1");
     $sql->execute(array($email,$senha_cript));
     $usuario = $sql->fetch(PDO::FETCH_ASSOC);
     if($usuario){
-        $token = sha1(uniqid().date('d-m-Y-H-i-s'));
-        $sql = $pdo->prepare("UPDATE usuarios SET token=? WHERE email=? AND senha=?");
-        if($sql->execute(array($token,$email,$senha_cript))){
-            $_SESSION['TOKEN'] = $token;
-            header('location: restrita.php');
+        if($usuario['status']=="confirmado"){
+            $token = sha1(uniqid().date('d-m-Y-H-i-s'));
+            $sql = $pdo->prepare("UPDATE usuarios SET token=? WHERE email=? AND senha=?");
+            if($sql->execute(array($token,$email,$senha_cript))){
+                $_SESSION['TOKEN'] = $token;
+                header('location: restrita.php');
+            }   
+        }else{
+            $erro_login = "Por favor, confirme seu cadastro pelo email.";
         }
     }else{
-        $erro_login = "Usuário ou senha incorretos!";
+        $erro_login = "Usuário e/ou senha incorretos!";
     }
 
 }
@@ -40,7 +45,7 @@ if(isset($_POST['email']) && isset($_POST['senha']) && !empty($_POST['email']) &
         <h2>Login</h2>
 
         <?php if(isset($erro_login)){?>
-            <div class="erro-geral animate__animated animate__shakeX"><?php echo $erro_login; ?></div>
+            <div style="text-align:center" class="erro-geral animate__animated animate__shakeX"><?php echo $erro_login; ?></div>
         <?php } ?>
 
         <?php if(isset($_GET['result']) && ($_GET['result']=="ok")){?>
